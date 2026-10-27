@@ -45,3 +45,5 @@ def create_account(
     session.refresh(user)
 
     return user
+
+@router.get()
