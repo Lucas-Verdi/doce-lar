@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -13,14 +14,30 @@ export class Login {
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    senha: ['', [Validators.required]],
+    password: ['', [Validators.required]],
   });
 
-  protected entrar() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  protected login() {
+      if (this.form.invalid) {
+        this.form.markAllAsTouched();
+        return;
+      }
+      void this.enviarLogin();
     }
-    // TODO: integrar com a API de autenticação
+  
+    private async enviarLogin() {
+      const { email, password } = this.form.value;
+      try {
+        const response = await fetch(`${environment.apiUrl}/api/user_login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!response.ok) {
+          throw new Error('Falha ao fazer login');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
-}

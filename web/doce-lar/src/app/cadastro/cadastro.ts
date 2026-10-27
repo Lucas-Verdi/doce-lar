@@ -40,7 +40,7 @@ export class Cadastro {
   private async enviarCadastro() {
     const { username, full_name, email, password } = this.form.value;
     try {
-      const response = await fetch(`${environment.apiUrl}/users/create_account`, {
+      const response = await fetch(`${environment.apiUrl}/api/create_account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, full_name, email, password }),
