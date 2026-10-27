@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npx ng build",
+  "outputDirectory": "dist/doce-lar/browser",
+  "cleanUrls": true,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.csr.html" }]
+}
