@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 function senhasIguais(group: AbstractControl) {
   const password = group.get('password')?.value;
@@ -20,6 +21,7 @@ export class Cadastro {
   protected readonly form = this.fb.nonNullable.group(
     {
       username: ['', [Validators.required]],
+      full_name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmar: ['', [Validators.required]],
@@ -36,12 +38,12 @@ export class Cadastro {
   }
 
   private async enviarCadastro() {
-    const { username, email, password } = this.form.value;
+    const { username, full_name, email, password } = this.form.value;
     try {
-      const response = await fetch('http://localhost:8000/create_account', {
+      const response = await fetch(`${environment.apiUrl}/users/create_account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, full_name, email, password }),
       });
       if (!response.ok) {
         throw new Error('Falha ao criar conta');
