@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, HTTPException
+from server.routes import router as users_router
+from fastapi import FastAPI, HTTPException, APIRouter
 from sqlalchemy import text
 from sqlmodel import SQLModel
 
@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(users_router)
 
 
 @app.get("/health")
@@ -34,4 +35,4 @@ def health():
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"Hello": "World"}  
