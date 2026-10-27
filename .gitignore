@@ -1,3 +1,5 @@
 docs/
 .vscode
 server/.env
+__pycache__/
+*.py[cod]

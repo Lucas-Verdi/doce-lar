@@ -4,10 +4,18 @@
 
   <form [formGroup]="form" (ngSubmit)="criarConta()" novalidate>
     <label>
-      Nome
-      <input type="text" formControlName="nome" autocomplete="name" />
-      @if (form.controls.nome.touched && form.controls.nome.invalid) {
-        <span class="erro">Informe seu nome.</span>
+      Nome de usuário
+      <input type="text" formControlName="username" autocomplete="name" />
+            @if (form.controls.username.touched && form.controls.username.invalid) {
+        <span class="erro">Informe seu nome de usuário.</span>
+      }
+    </label>
+
+    <label>
+      Nome completo
+      <input type="text" formControlName="full_name" autocomplete="name" />
+            @if (form.controls.full_name.touched && form.controls.full_name.invalid) {
+        <span class="erro">Informe seu nome completo.</span>
       }
     </label>
 
@@ -21,8 +29,8 @@
 
     <label>
       Senha
-      <input type="password" formControlName="senha" autocomplete="new-password" />
-      @if (form.controls.senha.touched && form.controls.senha.invalid) {
+      <input type="password"       formControlName="password" autocomplete="new-password" />
+            @if (form.controls.password.touched && form.controls.password.invalid) {
         <span class="erro">A senha deve ter ao menos 6 caracteres.</span>
       }
     </label>

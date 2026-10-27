@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from routes import router as users_router
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlmodel import SQLModel
 
@@ -16,7 +17,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origins=["http://localhost:4200", "https://doce-lar-eight.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(users_router)
+
+
 
 
 @app.get("/health")

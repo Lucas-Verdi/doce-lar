@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 function senhasIguais(group: AbstractControl) {
-  const senha = group.get('senha')?.value;
+  const password = group.get('password')?.value;
   const confirmar = group.get('confirmar')?.value;
-  return senha === confirmar ? null : { senhasDiferentes: true };
+  return password === confirmar ? null : { senhasDiferentes: true };
 }
 
 @Component({
@@ -19,9 +20,10 @@ export class Cadastro {
 
   protected readonly form = this.fb.nonNullable.group(
     {
-      nome: ['', [Validators.required]],
+      username: ['', [Validators.required]],
+      full_name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      senha: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       confirmar: ['', [Validators.required]],
     },
     { validators: senhasIguais },
@@ -32,6 +34,22 @@ export class Cadastro {
       this.form.markAllAsTouched();
       return;
     }
-    // TODO: integrar com a API de cadastro
+    void this.enviarCadastro();
+  }
+
+  private async enviarCadastro() {
+    const { username, full_name, email, password } = this.form.value;
+    try {
+      const response = await fetch(`${environment.apiUrl}/users/create_account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, full_name, email, password }),
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao criar conta');
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
