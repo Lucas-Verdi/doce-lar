@@ -1,9 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
+from sqlmodel import SQLModel
 
+import database.models.models  # noqa: F401  registra as models no metadata
 from database.connection import engine
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if engine is not None:
+        SQLModel.metadata.create_all(engine)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/health")

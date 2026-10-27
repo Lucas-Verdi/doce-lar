@@ -7,7 +7,6 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-# Railway fornece "mysql://..."; força o driver PyMySQL.
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
 
