@@ -1,13 +1,35 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from pwdlib import PasswordHash
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, select
+import os
+from datetime import datetime, timedelta, timezone
+import jwt
 
 from database.connection import get_session
 from database.models.models import User
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/api", tags=["api"])
 password_hash = PasswordHash.recommended()
 
+
+
+JWT_SECRET = os.environ["JWT_SECRET"]
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_MINUTES = 15
+
+class Token(SQLModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+def create_access_token(user_id: int) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "iat": now,
+        "exp": now + timedelta(minutes=ACCESS_TOKEN_MINUTES),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 #Rota criação de conta
 class UserCreate(SQLModel):
@@ -22,6 +44,10 @@ class UserPublic(SQLModel):
     username: str
     email: str
     full_name: str | None
+
+class UserLogin(SQLModel):
+    email: str
+    password: str
 
 
 @router.post(
@@ -46,4 +72,25 @@ def create_account(
 
     return user
 
-@router.get()
+
+@router.post("/user_login", response_model=Token)
+def user_login(
+    body: UserLogin,
+    session: Session = Depends(get_session),
+):
+    user = session.exec(
+        select(User).where(User.email == body.email)
+    ).first()
+
+    if user is None or not password_hash.verify(
+        body.password, user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-mail ou senha incorretos",
+        )
+
+    return {
+        "access_token": create_access_token(user.id),
+        "token_type": "bearer",
+    }
