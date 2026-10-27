@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from pwdlib import PasswordHash
 from sqlmodel import Session, SQLModel
 
-from server.database.connection import get_session
+from database.connection import get_session
 from database.models.models import User
 
 router = APIRouter(prefix="/users", tags=["users"])

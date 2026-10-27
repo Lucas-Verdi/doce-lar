@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
-from server.routes import router as users_router
-from fastapi import FastAPI, HTTPException, APIRouter
+from routes import router as users_router
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 from sqlmodel import SQLModel
 
@@ -30,9 +30,4 @@ def health():
         raise HTTPException(
             status_code=503, detail=f"Falha na conexão com o banco: {type(exc).__name__}"
         )
-    return {"status": "ok", "database": "connected"}
-
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}  
+    return {"status": "ok", "database": "connected"}  
