@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm --prefix web/doce-lar install",
+  "buildCommand": "npm --prefix web/doce-lar run build",
+  "outputDirectory": "web/doce-lar/dist/doce-lar/browser",
+  "cleanUrls": true,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.csr.html" }]
+}
