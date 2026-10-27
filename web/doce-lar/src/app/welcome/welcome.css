@@ -1,0 +1,199 @@
+:host {
+  display: block;
+  --rosa: #e8588d;
+  --rosa-claro: #fff0f5;
+  --marrom: #5a3a31;
+  color: var(--marrom);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #fffafc;
+}
+
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.marca {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--rosa);
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+nav a {
+  color: var(--marrom);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+nav a:hover {
+  color: var(--rosa);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #ffe0ec, #fff0f5);
+  flex-wrap: wrap;
+}
+
+.selo {
+  display: inline-block;
+  background: #fff;
+  color: var(--rosa);
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 0.8rem 0;
+  line-height: 1.1;
+}
+
+.sub {
+  max-width: 28rem;
+  font-size: 1.15rem;
+}
+
+.botao {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.9rem 2rem;
+  background: var(--rosa);
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.15s;
+}
+
+.botao:hover {
+  transform: translateY(-2px);
+}
+
+.acoes {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 1.3rem;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 2px solid var(--rosa);
+  transition: transform 0.15s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+.btn-conta {
+  background: var(--rosa);
+  color: #fff;
+}
+
+.btn-login {
+  background: #fff;
+  color: var(--rosa);
+}
+
+.hero-arte {
+  font-size: clamp(7rem, 18vw, 12rem);
+}
+
+.secao {
+  padding: 4rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.secao.claro {
+  max-width: none;
+  background: var(--rosa-claro);
+}
+
+.secao.claro .grade {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+h2 {
+  text-align: center;
+  font-size: 2rem;
+  margin: 0 0 2rem;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1.5rem;
+}
+
+.card,
+.dif {
+  padding: 1.5rem;
+  border-radius: 1.2rem;
+  text-align: center;
+}
+
+.card {
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card-emoji {
+  font-size: 3rem;
+}
+
+h3 {
+  margin: 0.5rem 0;
+}
+
+p {
+  line-height: 1.5;
+}
+
+.rodape {
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--marrom);
+  color: #fff;
+}
+
+.rodape p {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .topo {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

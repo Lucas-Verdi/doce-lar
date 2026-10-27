@@ -1,0 +1,89 @@
+:host {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffe0ec, #fff0f5);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #5a3a31;
+}
+
+.caixa {
+  width: 100%;
+  max-width: 24rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1.2rem;
+  box-shadow: 0 8px 24px rgba(232, 88, 141, 0.15);
+}
+
+.voltar {
+  color: #e8588d;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+h1 {
+  margin: 0.8rem 0 1.2rem;
+  font-size: 1.7rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.3rem;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid #f0c9d8;
+  border-radius: 0.7rem;
+  font: inherit;
+}
+
+input:focus {
+  outline: none;
+  border-color: #e8588d;
+}
+
+.erro {
+  display: block;
+  margin-top: 0.25rem;
+  color: #c0264f;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+button {
+  width: 100%;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 999px;
+  background: #e8588d;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alt {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.alt a {
+  color: #e8588d;
+  font-weight: 600;
+}

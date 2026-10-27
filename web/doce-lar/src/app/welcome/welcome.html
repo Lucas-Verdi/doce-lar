@@ -1,0 +1,57 @@
+<header class="topo">
+  <span class="marca">🧁 Doce Lar</span>
+  <nav>
+    <a href="#cardapio">Cardápio</a>
+    <a href="#sobre">Sobre</a>
+    <a href="#contato">Contato</a>
+    <button type="button" class="btn-login" routerLink="/login">Entrar</button>
+    <button type="button" class="btn-conta" routerLink="/cadastro">Criar conta</button>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-texto">
+      <p class="selo">Cupcakes artesanais</p>
+      <h1>Bem-vindo à Doce Lar</h1>
+      <p class="sub">Cupcakes feitos com amor para adoçar o seu dia, do jeitinho de casa.</p>
+      <a class="botao" href="#cardapio">Ver cardápio</a>
+      <div class="acoes">
+        <button type="button" class="btn-conta" routerLink="/cadastro">Criar conta</button>
+        <button type="button" class="btn-login" routerLink="/login">Já tenho conta</button>
+      </div>
+    </div>
+    <div class="hero-arte" aria-hidden="true">🧁</div>
+  </section>
+
+  <section id="cardapio" class="secao">
+    <h2>Nossos queridinhos</h2>
+    <div class="grade">
+      @for (c of cupcakes; track c.nome) {
+        <article class="card" [style.background]="c.cor">
+          <div class="card-emoji">{{ c.emoji }}</div>
+          <h3>{{ c.nome }}</h3>
+          <p>{{ c.descricao }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section id="sobre" class="secao claro">
+    <h2>Por que Doce Lar?</h2>
+    <div class="grade">
+      @for (d of diferenciais; track d.titulo) {
+        <article class="dif">
+          <div class="card-emoji">{{ d.icone }}</div>
+          <h3>{{ d.titulo }}</h3>
+          <p>{{ d.texto }}</p>
+        </article>
+      }
+    </div>
+  </section>
+</main>
+
+<footer id="contato" class="rodape">
+  <p>🧁 Doce Lar — Feito com carinho · Encomendas pelo WhatsApp</p>
+</footer>
+

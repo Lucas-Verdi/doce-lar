@@ -1,0 +1,42 @@
+<div class="caixa">
+  <a class="voltar" routerLink="/">← Voltar</a>
+  <h1>🧁 Criar conta</h1>
+
+  <form [formGroup]="form" (ngSubmit)="criarConta()" novalidate>
+    <label>
+      Nome
+      <input type="text" formControlName="nome" autocomplete="name" />
+      @if (form.controls.nome.touched && form.controls.nome.invalid) {
+        <span class="erro">Informe seu nome.</span>
+      }
+    </label>
+
+    <label>
+      E-mail
+      <input type="email" formControlName="email" autocomplete="email" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <span class="erro">Informe um e-mail válido.</span>
+      }
+    </label>
+
+    <label>
+      Senha
+      <input type="password" formControlName="senha" autocomplete="new-password" />
+      @if (form.controls.senha.touched && form.controls.senha.invalid) {
+        <span class="erro">A senha deve ter ao menos 6 caracteres.</span>
+      }
+    </label>
+
+    <label>
+      Confirmar senha
+      <input type="password" formControlName="confirmar" autocomplete="new-password" />
+      @if (form.controls.confirmar.touched && form.hasError('senhasDiferentes')) {
+        <span class="erro">As senhas não coincidem.</span>
+      }
+    </label>
+
+    <button type="submit">Criar conta</button>
+  </form>
+
+  <p class="alt">Já tem conta? <a routerLink="/login">Entrar</a></p>
+</div>
