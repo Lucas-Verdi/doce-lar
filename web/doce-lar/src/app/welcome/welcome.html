@@ -32,6 +32,31 @@
           <div class="card-emoji">{{ c.emoji }}</div>
           <h3>{{ c.nome }}</h3>
           <p>{{ c.descricao }}</p>
+          <div class="produto-acoes">
+            <span class="rotulo-quantidade">Quantidade</span>
+            <div class="seletor-quantidade" role="group" [attr.aria-label]="'Quantidade de ' + c.nome">
+              <button
+                type="button"
+                [attr.aria-label]="'Diminuir quantidade de ' + c.nome"
+                [disabled]="obterQuantidade(c.id) <= 1"
+                (click)="alterarQuantidadeSelecionada(c.id, -1)"
+              >
+                −
+              </button>
+              <span aria-live="polite">{{ obterQuantidade(c.id) }}</span>
+              <button
+                type="button"
+                [attr.aria-label]="'Aumentar quantidade de ' + c.nome"
+                [disabled]="obterQuantidade(c.id) >= 99"
+                (click)="alterarQuantidadeSelecionada(c.id, 1)"
+              >
+                +
+              </button>
+            </div>
+            <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(c)">
+              Adicionar ao carrinho
+            </button>
+          </div>
         </article>
       }
     </div>
@@ -55,3 +80,68 @@
   <p>🧁 Doce Lar — Feito com carinho · Encomendas pelo WhatsApp</p>
 </footer>
 
+<section class="carrinho-flutuante" aria-label="Carrinho de compras">
+  @if (carrinhoAberto()) {
+    <div id="painel-carrinho" class="painel-carrinho">
+      <div class="cabecalho-carrinho">
+        <h2>Meu carrinho</h2>
+        <button
+          type="button"
+          class="btn-fechar"
+          aria-label="Fechar carrinho"
+          (click)="carrinhoAberto.set(false)"
+        >
+          ×
+        </button>
+      </div>
+      @if (cart.items().length === 0) {
+        <p class="carrinho-vazio">Seu carrinho está vazio.</p>
+      } @else {
+        <ul class="lista-carrinho">
+          @for (item of cart.items(); track item.id) {
+            <li>
+              <span class="item-carrinho-nome">{{ item.emoji }} {{ item.nome }}</span>
+              <div class="item-carrinho-acoes">
+                <button
+                  type="button"
+                  [attr.aria-label]="'Diminuir quantidade de ' + item.nome"
+                  [disabled]="item.quantidade <= 1"
+                  (click)="alterarQuantidade(item.id, item.quantidade - 1)"
+                >
+                  −
+                </button>
+                <span>{{ item.quantidade }}</span>
+                <button
+                  type="button"
+                  [attr.aria-label]="'Aumentar quantidade de ' + item.nome"
+                  (click)="alterarQuantidade(item.id, item.quantidade + 1)"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  class="btn-remover"
+                  [attr.aria-label]="'Remover ' + item.nome + ' do carrinho'"
+                  (click)="cart.remove(item.id)"
+                >
+                  Remover
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+  <button
+    type="button"
+    class="btn-carrinho"
+    [attr.aria-expanded]="carrinhoAberto()"
+    aria-controls="painel-carrinho"
+    (click)="carrinhoAberto.update((aberto) => !aberto)"
+  >
+    <span aria-hidden="true">🛒</span>
+    Carrinho
+    <span class="badge-carrinho" aria-label="itens no carrinho">{{ cart.totalItems() }}</span>
+  </button>
+</section>
