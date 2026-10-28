@@ -55,6 +55,8 @@ export class Welcome {
   protected readonly checkoutEtapa = signal<'opcoes' | 'login' | 'cadastro' | 'pagamento'>('opcoes');
   protected readonly checkoutErro = signal('');
   protected readonly checkoutEnviando = signal(false);
+  protected readonly pagamentoSelecionado = signal<'cartao' | 'pix' | null>(null);
+  protected readonly pagamentoConfirmado = signal(false);
 
   protected readonly checkoutLoginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -120,6 +122,19 @@ export class Welcome {
     this.checkoutAberto.set(false);
   }
 
+  protected selecionarPagamento(meio: 'cartao' | 'pix'): void {
+    this.pagamentoSelecionado.set(meio);
+    this.pagamentoConfirmado.set(false);
+  }
+
+  protected confirmarPagamento(): void {
+    if (this.pagamentoSelecionado() === null) {
+      return;
+    }
+
+    this.pagamentoConfirmado.set(true);
+  }
+
   protected async entrarNoCheckout(): Promise<void> {
     if (this.checkoutLoginForm.invalid) {
       this.checkoutLoginForm.markAllAsTouched();
@@ -177,6 +192,8 @@ export class Welcome {
   private abrirCheckout(): void {
     this.carrinhoAberto.set(false);
     this.checkoutErro.set('');
+    this.pagamentoSelecionado.set(null);
+    this.pagamentoConfirmado.set(false);
     this.checkoutEtapa.set(this.auth.isAuthenticated() ? 'pagamento' : 'opcoes');
     this.checkoutAberto.set(true);
   }

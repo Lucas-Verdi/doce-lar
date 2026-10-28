@@ -300,6 +300,34 @@ h2 {
   font-size: 0.85rem;
 }
 
+.checkout-pagamentos {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.checkout-botao-pagamento {
+  width: 100%;
+  background: #fff;
+  color: var(--rosa);
+}
+
+.checkout-botao-selecionado {
+  background: var(--rosa);
+  color: #fff;
+}
+
+.checkout-pagamento-selecionado {
+  margin: 0;
+  font-weight: 600;
+}
+
+.checkout-pagamento-confirmado {
+  margin: 0;
+  color: #26734d;
+  font-weight: 600;
+}
+
 .card-emoji {
   font-size: 3rem;
 }

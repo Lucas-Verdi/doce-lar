@@ -298,10 +298,47 @@
           Conta confirmada para {{ auth.session()?.username }}. Seu carrinho está pronto para
           continuar.
         </p>
-        <div class="checkout-aviso" role="status">
-          O checkout visual está pronto, mas o backend ainda não possui uma rota para criar
-          pedidos ou iniciar pagamentos.
+        <div class="checkout-aviso" role="note">
+          Este é um pagamento falso para fins acadêmicos. Nenhuma cobrança real será realizada.
         </div>
+        <div class="checkout-pagamentos" role="group" aria-label="Forma de pagamento">
+          <button
+            type="button"
+            class="checkout-botao checkout-botao-pagamento"
+            [class.checkout-botao-selecionado]="pagamentoSelecionado() === 'cartao'"
+            [attr.aria-pressed]="pagamentoSelecionado() === 'cartao'"
+            (click)="selecionarPagamento('cartao')"
+          >
+            Cartão de crédito
+          </button>
+          <button
+            type="button"
+            class="checkout-botao checkout-botao-pagamento"
+            [class.checkout-botao-selecionado]="pagamentoSelecionado() === 'pix'"
+            [attr.aria-pressed]="pagamentoSelecionado() === 'pix'"
+            (click)="selecionarPagamento('pix')"
+          >
+            Pix
+          </button>
+        </div>
+        @if (pagamentoSelecionado(); as pagamento) {
+          <p class="checkout-pagamento-selecionado" role="status">
+            {{ pagamento === 'cartao' ? 'Cartão de crédito' : 'Pix' }} selecionado.
+            Esta simulação não processa pagamentos reais.
+          </p>
+          <button
+            type="button"
+            class="checkout-botao checkout-botao-principal"
+            (click)="confirmarPagamento()"
+          >
+            Confirmar
+          </button>
+          @if (pagamentoConfirmado()) {
+            <p class="checkout-pagamento-confirmado" role="status">
+              Pagamento simulado confirmado com sucesso.
+            </p>
+          }
+        }
       }
     </section>
   </div>
