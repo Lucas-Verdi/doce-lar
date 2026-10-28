@@ -1,28 +1,54 @@
+import { CurrencyPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { CartService } from '../cart.service';
+import { environment } from '../../environments/environment';
 
 interface Cupcake {
   id: string;
   nome: string;
   descricao: string;
+  preco: number;
+  disponivel: boolean;
+  estoque: number;
   emoji: string;
   cor: string;
 }
 
+interface ProductResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  in_stock: boolean;
+  quantity: number;
+}
+
+const presentationByName: Record<string, Pick<Cupcake, 'emoji' | 'cor'>> = {
+  'Morango Cremoso': { emoji: '🍓', cor: '#ffd6e0' },
+  Brigadeiro: { emoji: '🍫', cor: '#e7d3c4' },
+  'Limão Siciliano': { emoji: '🍋', cor: '#fff3b8' },
+  'Red Velvet': { emoji: '❤️', cor: '#ffc9c9' },
+};
+
 @Component({
   selector: 'app-welcome',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink],
   templateUrl: './welcome.html',
   styleUrl: './welcome.css',
 })
 export class Welcome {
   protected readonly cart = inject(CartService);
   protected readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
+  protected readonly cupcakes = signal<Cupcake[]>([]);
+  protected readonly produtosCarregando = signal(true);
+  protected readonly produtosErro = signal('');
   protected readonly quantidadeSelecionada = signal<Record<string, number>>({});
   protected readonly carrinhoAberto = signal(false);
   protected readonly checkoutAberto = signal(false);
@@ -43,13 +69,6 @@ export class Welcome {
     confirmar: ['', Validators.required],
   });
 
-  protected readonly cupcakes: Cupcake[] = [
-    { id: 'morango-cremoso', nome: 'Morango Cremoso', descricao: 'Massa de baunilha com recheio e cobertura de morango.', emoji: '🍓', cor: '#ffd6e0' },
-    { id: 'brigadeiro', nome: 'Brigadeiro', descricao: 'Massa de chocolate com brigadeiro belga e granulado.', emoji: '🍫', cor: '#e7d3c4' },
-    { id: 'limao-siciliano', nome: 'Limão Siciliano', descricao: 'Massa leve com creme cítrico de limão.', emoji: '🍋', cor: '#fff3b8' },
-    { id: 'red-velvet', nome: 'Red Velvet', descricao: 'Clássico aveludado com cream cheese.', emoji: '❤️', cor: '#ffc9c9' },
-  ];
-
   protected readonly diferenciais = [
     { icone: '🧁', titulo: 'Feitos à mão', texto: 'Cada cupcake é preparado com carinho todos os dias.' },
     { icone: '🌾', titulo: 'Ingredientes selecionados', texto: 'Sem essências artificiais, só sabor de verdade.' },
@@ -57,11 +76,16 @@ export class Welcome {
   ];
 
   constructor() {
+    this.carregarProdutos();
     this.route.queryParamMap.subscribe((params) => {
       if (params.get('checkout') === '1') {
         this.abrirCheckout();
       }
     });
+  }
+
+  protected recarregarProdutos(): void {
+    this.carregarProdutos();
   }
 
   protected alterarQuantidadeSelecionada(id: string, incremento: number): void {
@@ -76,8 +100,12 @@ export class Welcome {
   }
 
   protected adicionarAoCarrinho(cupcake: Cupcake): void {
-    const { id, nome, emoji } = cupcake;
-    this.cart.add({ id, nome, emoji }, this.obterQuantidade(id));
+    if (!cupcake.disponivel || cupcake.estoque < 1) {
+      return;
+    }
+
+    const { id, nome, emoji, preco } = cupcake;
+    this.cart.add({ id, nome, emoji, preco }, this.obterQuantidade(id));
   }
 
   protected alterarQuantidade(id: string, quantidade: number): void {
@@ -151,5 +179,42 @@ export class Welcome {
     this.checkoutErro.set('');
     this.checkoutEtapa.set(this.auth.isAuthenticated() ? 'pagamento' : 'opcoes');
     this.checkoutAberto.set(true);
+  }
+
+  private carregarProdutos(): void {
+    this.produtosCarregando.set(true);
+    this.produtosErro.set('');
+
+    this.http.get<ProductResponse[]>(`${environment.apiUrl}/api/get_products`).subscribe({
+      next: (products) => {
+        this.cupcakes.set(products.map((product) => this.mapProduct(product)));
+        this.cart.atualizarPrecos(
+          new Map(products.map((product) => [String(product.id), product.price])),
+        );
+        this.produtosCarregando.set(false);
+      },
+      error: (error: unknown) => {
+        console.error('Não foi possível carregar os produtos.', error);
+        this.produtosErro.set('Não foi possível carregar o cardápio. Tente novamente.');
+        this.produtosCarregando.set(false);
+      },
+    });
+  }
+
+  private mapProduct(product: ProductResponse): Cupcake {
+    const presentation = presentationByName[product.name] ?? {
+      emoji: '🧁',
+      cor: '#f5e1d3',
+    };
+
+    return {
+      id: String(product.id),
+      nome: product.name,
+      descricao: product.description ?? 'Delicioso cupcake artesanal.',
+      preco: product.price,
+      disponivel: product.in_stock && product.quantity > 0,
+      estoque: product.quantity,
+      ...presentation,
+    };
   }
 }

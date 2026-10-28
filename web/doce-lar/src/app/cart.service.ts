@@ -5,6 +5,7 @@ export interface CartItem {
   id: string;
   nome: string;
   emoji: string;
+  preco: number;
   quantidade: number;
 }
 
@@ -18,6 +19,9 @@ export class CartService {
   readonly items = this.itemsState.asReadonly();
   readonly totalItems = computed(() =>
     this.itemsState().reduce((total, item) => total + item.quantidade, 0),
+  );
+  readonly total = computed(() =>
+    this.itemsState().reduce((total, item) => total + item.preco * item.quantidade, 0),
   );
 
   add(item: Omit<CartItem, 'quantidade'>, quantidade: number): void {
@@ -33,6 +37,15 @@ export class CartService {
           )
         : [...currentItems, { ...item, quantidade }],
     );
+  }
+
+  atualizarPrecos(precos: ReadonlyMap<string, number>): void {
+    const items = this.itemsState().map((item) => {
+      const preco = precos.get(item.id);
+      return preco === undefined ? item : { ...item, preco };
+    });
+
+    this.updateItems(items);
   }
 
   setQuantity(id: string, quantidade: number): void {
@@ -61,7 +74,7 @@ export class CartService {
         console.error('O carrinho salvo no navegador tem um formato inválido.');
         return [];
       }
-      return storedItems;
+      return storedItems.map((item) => ({ ...item, preco: item.preco ?? 0 }));
     } catch (error) {
       console.error('Não foi possível carregar o carrinho salvo no navegador.', error);
       return [];
@@ -87,6 +100,8 @@ function isCartItem(value: unknown): value is CartItem {
     typeof item['id'] === 'string' &&
     typeof item['nome'] === 'string' &&
     typeof item['emoji'] === 'string' &&
+    (item['preco'] === undefined ||
+      (typeof item['preco'] === 'number' && Number.isFinite(item['preco']) && item['preco'] >= 0)) &&
     typeof item['quantidade'] === 'number' &&
     Number.isInteger(item['quantidade']) &&
     item['quantidade'] > 0

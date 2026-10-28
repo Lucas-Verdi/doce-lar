@@ -35,40 +35,58 @@
 
   <section id="cardapio" class="secao">
     <h2>Nossos queridinhos</h2>
-    <div class="grade">
-      @for (c of cupcakes; track c.nome) {
-        <article class="card" [style.background]="c.cor">
-          <div class="card-emoji">{{ c.emoji }}</div>
-          <h3>{{ c.nome }}</h3>
-          <p>{{ c.descricao }}</p>
-          <div class="produto-acoes">
-            <span class="rotulo-quantidade">Quantidade</span>
-            <div class="seletor-quantidade" role="group" [attr.aria-label]="'Quantidade de ' + c.nome">
+    @if (produtosCarregando()) {
+      <p>Carregando produtos...</p>
+    } @else if (produtosErro()) {
+      <p role="alert">{{ produtosErro() }}</p>
+      <button type="button" class="btn-login" (click)="recarregarProdutos()">Tentar novamente</button>
+    } @else if (cupcakes().length === 0) {
+      <p>Não há produtos disponíveis no momento.</p>
+    } @else {
+      <div class="grade">
+        @for (c of cupcakes(); track c.id) {
+          <article class="card" [style.background]="c.cor">
+            <div class="card-emoji">{{ c.emoji }}</div>
+            <h3>{{ c.nome }}</h3>
+            <p>{{ c.descricao }}</p>
+            <p>{{ c.preco | currency: 'BRL' }}</p>
+            @if (!c.disponivel) {
+              <p>Produto indisponível</p>
+            }
+            <div class="produto-acoes">
+              <span class="rotulo-quantidade">Quantidade</span>
+              <div class="seletor-quantidade" role="group" [attr.aria-label]="'Quantidade de ' + c.nome">
+                <button
+                  type="button"
+                  [attr.aria-label]="'Diminuir quantidade de ' + c.nome"
+                  [disabled]="!c.disponivel || obterQuantidade(c.id) <= 1"
+                  (click)="alterarQuantidadeSelecionada(c.id, -1)"
+                >
+                  −
+                </button>
+                <span aria-live="polite">{{ obterQuantidade(c.id) }}</span>
+                <button
+                  type="button"
+                  [attr.aria-label]="'Aumentar quantidade de ' + c.nome"
+                  [disabled]="!c.disponivel || obterQuantidade(c.id) >= 99 || obterQuantidade(c.id) >= c.estoque"
+                  (click)="alterarQuantidadeSelecionada(c.id, 1)"
+                >
+                  +
+                </button>
+              </div>
               <button
                 type="button"
-                [attr.aria-label]="'Diminuir quantidade de ' + c.nome"
-                [disabled]="obterQuantidade(c.id) <= 1"
-                (click)="alterarQuantidadeSelecionada(c.id, -1)"
+                class="btn-adicionar"
+                [disabled]="!c.disponivel"
+                (click)="adicionarAoCarrinho(c)"
               >
-                −
-              </button>
-              <span aria-live="polite">{{ obterQuantidade(c.id) }}</span>
-              <button
-                type="button"
-                [attr.aria-label]="'Aumentar quantidade de ' + c.nome"
-                [disabled]="obterQuantidade(c.id) >= 99"
-                (click)="alterarQuantidadeSelecionada(c.id, 1)"
-              >
-                +
+                Adicionar ao carrinho
               </button>
             </div>
-            <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(c)">
-              Adicionar ao carrinho
-            </button>
-          </div>
-        </article>
-      }
-    </div>
+          </article>
+        }
+      </div>
+    }
   </section>
 
   <section id="sobre" class="secao claro">
@@ -109,7 +127,10 @@
         <ul class="lista-carrinho">
           @for (item of cart.items(); track item.id) {
             <li>
-              <span class="item-carrinho-nome">{{ item.emoji }} {{ item.nome }}</span>
+              <span class="item-carrinho-nome">
+                {{ item.emoji }} {{ item.nome }}
+                <small>{{ item.preco | currency: 'BRL' }} cada</small>
+              </span>
               <div class="item-carrinho-acoes">
                 <button
                   type="button"
@@ -136,9 +157,13 @@
                   Remover
                 </button>
               </div>
+              <strong>{{ item.preco * item.quantidade | currency: 'BRL' }}</strong>
             </li>
           }
         </ul>
+        <p class="carrinho-total">
+          Total: <strong>{{ cart.total() | currency: 'BRL' }}</strong>
+        </p>
         <button
           type="button"
           class="btn-pagamento"
