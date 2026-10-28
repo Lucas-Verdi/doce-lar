@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 
 from database.connection import get_session
-from database.models.models import User
+from database.models.models import User, Product
 
 router = APIRouter(prefix="/api", tags=["api"])
 password_hash = PasswordHash.recommended()
@@ -74,7 +74,7 @@ def create_account(
 
     return user
 
-
+#Rota de login
 @router.post("/user_login", response_model=Token)
 def user_login(
     body: UserLogin,
@@ -98,3 +98,18 @@ def user_login(
         "username": user.username,
         "full_name": user.full_name,
     }
+
+
+class ProductPublic(SQLModel):
+    id: int
+    name: str
+    description: str | None
+    price: float
+    in_stock: bool
+    quantity: int
+
+@router.get("/get_products", response_model=list [ProductPublic])
+def get_products(
+    session: Session = Depends(get_session),
+) -> list[Product]:
+    return session.exec(select(Product)).all()
