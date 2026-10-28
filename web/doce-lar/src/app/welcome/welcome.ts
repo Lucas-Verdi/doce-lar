@@ -27,6 +27,21 @@ interface ProductResponse {
   quantity: number;
 }
 
+interface OrderResponse {
+  id: number;
+  total_amount: number;
+  payment_method: 'credit_card' | 'pix';
+  items: OrderItemResponse[];
+}
+
+interface OrderItemResponse {
+  product_id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
+
 const presentationByName: Record<string, Pick<Cupcake, 'emoji' | 'cor'>> = {
   'Morango Cremoso': { emoji: '🍓', cor: '#ffd6e0' },
   Brigadeiro: { emoji: '🍫', cor: '#e7d3c4' },
@@ -57,6 +72,10 @@ export class Welcome {
   protected readonly checkoutEnviando = signal(false);
   protected readonly pagamentoSelecionado = signal<'cartao' | 'pix' | null>(null);
   protected readonly pagamentoConfirmado = signal(false);
+  protected readonly historicoAberto = signal(false);
+  protected readonly pedidos = signal<OrderResponse[]>([]);
+  protected readonly pedidosCarregando = signal(false);
+  protected readonly pedidosErro = signal('');
 
   protected readonly checkoutLoginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -127,12 +146,58 @@ export class Welcome {
     this.pagamentoConfirmado.set(false);
   }
 
-  protected confirmarPagamento(): void {
-    if (this.pagamentoSelecionado() === null) {
+  protected async confirmarPagamento(): Promise<void> {
+    if (this.pagamentoConfirmado()) {
+      this.fecharCheckout();
       return;
     }
 
-    this.pagamentoConfirmado.set(true);
+    const pagamento = this.pagamentoSelecionado();
+    if (pagamento === null || this.cart.items().length === 0) {
+      return;
+    }
+
+    this.checkoutErro.set('');
+    this.checkoutEnviando.set(true);
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.auth.session()?.accessToken ?? ''}`,
+        },
+        body: JSON.stringify({
+          items: this.cart.items().map((item) => ({
+            product_id: Number(item.id),
+            quantity: item.quantidade,
+          })),
+          payment_method: pagamento === 'cartao' ? 'credit_card' : 'pix',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await this.getErrorMessage(response, 'Não foi possível gerar o pedido.'));
+      }
+
+      this.cart.clear();
+      this.pagamentoConfirmado.set(true);
+      await this.carregarHistorico();
+    } catch (error) {
+      this.checkoutErro.set(
+        error instanceof Error ? error.message : 'Não foi possível gerar o pedido.',
+      );
+    } finally {
+      this.checkoutEnviando.set(false);
+    }
+  }
+
+  protected async abrirHistorico(): Promise<void> {
+    this.historicoAberto.set(true);
+    await this.carregarHistorico();
+  }
+
+  protected fecharHistorico(): void {
+    this.historicoAberto.set(false);
   }
 
   protected async entrarNoCheckout(): Promise<void> {
@@ -218,6 +283,50 @@ export class Welcome {
     });
   }
 
+  private async carregarHistorico(): Promise<void> {
+    const accessToken = this.auth.session()?.accessToken;
+    if (!accessToken) return;
+
+    this.pedidosCarregando.set(true);
+    this.pedidosErro.set('');
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/orders`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) {
+        throw new Error(await this.getErrorMessage(response, 'Não foi possível carregar os pedidos.'));
+      }
+      const orders: unknown = await response.json();
+      if (!Array.isArray(orders)) {
+        throw new Error('A resposta do servidor contém um histórico inválido.');
+      }
+      if (!orders.every(isOrderResponse)) {
+        throw new Error('A resposta do servidor contém pedidos inválidos.');
+      }
+      this.pedidos.set(orders);
+    } catch (error) {
+      console.error('Não foi possível carregar o histórico de pedidos.', error);
+      this.pedidosErro.set(
+        error instanceof Error ? error.message : 'Não foi possível carregar os pedidos.',
+      );
+    } finally {
+      this.pedidosCarregando.set(false);
+    }
+  }
+
+  private async getErrorMessage(response: Response, fallback: string): Promise<string> {
+    try {
+      const body: unknown = await response.json();
+      if (typeof body === 'object' && body !== null && 'detail' in body) {
+        const detail = body.detail;
+        if (typeof detail === 'string') return detail;
+      }
+    } catch (error) {
+      console.error('Não foi possível ler a mensagem de erro do servidor.', error);
+    }
+    return fallback;
+  }
+
   private mapProduct(product: ProductResponse): Cupcake {
     const presentation = presentationByName[product.name] ?? {
       emoji: '🧁',
@@ -234,4 +343,30 @@ export class Welcome {
       ...presentation,
     };
   }
+}
+
+function isOrderResponse(value: unknown): value is OrderResponse {
+  if (typeof value !== 'object' || value === null) return false;
+  const order = value as Record<string, unknown>;
+
+  return (
+    typeof order['id'] === 'number' &&
+    typeof order['total_amount'] === 'number' &&
+    (order['payment_method'] === 'credit_card' || order['payment_method'] === 'pix') &&
+    Array.isArray(order['items']) &&
+    order['items'].every(isOrderItemResponse)
+  );
+}
+
+function isOrderItemResponse(value: unknown): value is OrderItemResponse {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item['product_id'] === 'number' &&
+    typeof item['name'] === 'string' &&
+    typeof item['price'] === 'number' &&
+    typeof item['quantity'] === 'number' &&
+    typeof item['subtotal'] === 'number'
+  );
 }

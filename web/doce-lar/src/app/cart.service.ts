@@ -60,6 +60,10 @@ export class CartService {
     this.updateItems(this.itemsState().filter((item) => item.id !== id));
   }
 
+  clear(): void {
+    this.updateItems([]);
+  }
+
   private updateItems(items: CartItem[]): void {
     this.itemsState.set(items);
     this.saveItems(items);

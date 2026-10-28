@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from database.connection import get_session
-from database.models.models import Order, OrderProduct, Product, User, UserCart
+from database.models.models import Order, OrderProduct, Payment, Product, User, UserCart
 
 router = APIRouter(prefix="/api", tags=["api"])
 password_hash = PasswordHash.recommended()
@@ -67,11 +67,26 @@ class OrderItemInput(SQLModel):
 
 class OrderCreate(SQLModel):
     items: list[OrderItemInput] = Field(min_length=1)
+    payment_method: str
 
 class OrderPublic(SQLModel):
     id: int
     total_amount: float
     status: str
+    payment_method: str
+
+class OrderItemPublic(SQLModel):
+    product_id: int
+    name: str
+    price: float
+    quantity: int
+    subtotal: float
+
+class OrderHistoryPublic(SQLModel):
+    id: int
+    total_amount: float
+    payment_method: str
+    items: list[OrderItemPublic]
 
 
 class UserCreate(SQLModel):
@@ -165,6 +180,12 @@ def create_order(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    if body.payment_method not in {"credit_card", "pix"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Forma de pagamento inválida.",
+        )
+
     product_ids = [item.product_id for item in body.items]
 
     if len(set(product_ids)) != len(product_ids):
@@ -220,13 +241,6 @@ def create_order(
         product = products[item.product_id]
 
         session.add(
-            UserCart(
-                user_id=current_user.id,
-                product_id=product.id,
-                quantity=item.quantity,
-            )
-        )
-        session.add(
             OrderProduct(
                 order_id=order.id,
                 product_id=product.id,
@@ -237,7 +251,64 @@ def create_order(
         product.quantity -= item.quantity
         product.in_stock = product.quantity > 0
 
+    session.add(
+        Payment(
+            order_id=order.id,
+            amount=total,
+            status="paid",
+            payment_method=body.payment_method,
+        )
+    )
     session.commit()
     session.refresh(order)
 
-    return order
+    return OrderPublic(
+        id=order.id,
+        total_amount=order.total_amount,
+        status=order.status,
+        payment_method=body.payment_method,
+    )
+
+
+@router.get("/orders", response_model=list[OrderHistoryPublic])
+def get_orders(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> list[OrderHistoryPublic]:
+    orders = session.exec(
+        select(Order)
+        .where(Order.user_id == current_user.id)
+        .order_by(Order.id.desc())
+    ).all()
+
+    result: list[OrderHistoryPublic] = []
+    for order in orders:
+        payment = session.exec(
+            select(Payment).where(Payment.order_id == order.id)
+        ).first()
+        order_items = session.exec(
+            select(OrderProduct).where(OrderProduct.order_id == order.id)
+        ).all()
+        history_items: list[OrderItemPublic] = []
+        for order_item in order_items:
+            product = session.get(Product, order_item.product_id)
+            if product is None:
+                continue
+            history_items.append(
+                OrderItemPublic(
+                    product_id=product.id,
+                    name=product.name,
+                    price=product.price,
+                    quantity=order_item.quantity,
+                    subtotal=product.price * order_item.quantity,
+                )
+            )
+        result.append(
+            OrderHistoryPublic(
+                id=order.id,
+                total_amount=order.total_amount,
+                payment_method=payment.payment_method if payment else "unknown",
+                items=history_items,
+            )
+        )
+    return result

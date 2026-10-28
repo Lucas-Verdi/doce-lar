@@ -8,6 +8,7 @@
       <span class="usuario-logado">
         Olá, {{ session.username }}
       </span>
+      <button type="button" class="btn-login" (click)="abrirHistorico()">Histórico de pedidos</button>
       <button type="button" class="btn-login" (click)="encerrarSessao()">Sair</button>
     } @else {
       <button type="button" class="btn-login" routerLink="/login">Entrar</button>
@@ -329,16 +330,78 @@
           <button
             type="button"
             class="checkout-botao checkout-botao-principal"
+            [disabled]="checkoutEnviando()"
             (click)="confirmarPagamento()"
           >
-            Confirmar
+            @if (checkoutEnviando()) {
+              <span class="indicador-carregamento" aria-hidden="true"></span>
+              Confirmando...
+            } @else if (pagamentoConfirmado()) {
+              Fechar
+            } @else {
+              Confirmar
+            }
           </button>
           @if (pagamentoConfirmado()) {
             <p class="checkout-pagamento-confirmado" role="status">
-              Pagamento simulado confirmado com sucesso.
+              Pedido gerado com sucesso. Pagamento simulado confirmado.
             </p>
+          } @else if (checkoutErro()) {
+            <p class="checkout-erro" role="alert">{{ checkoutErro() }}</p>
           }
         }
+      }
+    </section>
+  </div>
+}
+
+@if (historicoAberto()) {
+  <div
+    class="checkout-overlay"
+    role="presentation"
+    (click)="fecharHistorico()"
+    (keydown.escape)="fecharHistorico()"
+  >
+    <section
+      class="checkout-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="historico-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="checkout-fechar"
+        aria-label="Fechar histórico de pedidos"
+        (click)="fecharHistorico()"
+      >
+        ×
+      </button>
+      <h2 id="historico-titulo">Histórico de pedidos</h2>
+      @if (pedidosCarregando()) {
+        <p>Carregando pedidos...</p>
+      } @else if (pedidosErro()) {
+        <p class="checkout-erro" role="alert">{{ pedidosErro() }}</p>
+      } @else if (pedidos().length === 0) {
+        <p>Você ainda não possui pedidos.</p>
+      } @else {
+        <ul class="lista-pedidos">
+          @for (pedido of pedidos(); track pedido.id) {
+            <li>
+              <strong>Pedido #{{ pedido.id }}</strong>
+              <span>{{ pedido.total_amount | currency: 'BRL' }}</span>
+              <span>{{ pedido.payment_method === 'pix' ? 'Pix' : 'Cartão de crédito' }}</span>
+              <ul class="lista-itens-pedido">
+                @for (item of pedido.items; track item.product_id) {
+                  <li>
+                    {{ item.name }} — {{ item.quantity }} × {{ item.price | currency: 'BRL' }}
+                    = {{ item.subtotal | currency: 'BRL' }}
+                  </li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
       }
     </section>
   </div>
