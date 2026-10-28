@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { environment } from '../../environments/environment';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 
 function senhasIguais(group: AbstractControl) {
   const password = group.get('password')?.value;
@@ -17,6 +17,11 @@ function senhasIguais(group: AbstractControl) {
 })
 export class Cadastro {
   private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  protected readonly errorMessage = signal('');
+  protected readonly isSubmitting = signal(false);
 
   protected readonly form = this.fb.nonNullable.group(
     {
@@ -29,7 +34,7 @@ export class Cadastro {
     { validators: senhasIguais },
   );
 
-  protected criarConta() {
+  protected criarConta(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -38,18 +43,23 @@ export class Cadastro {
   }
 
   private async enviarCadastro() {
-    const { username, full_name, email, password } = this.form.value;
+    const { username, full_name, email, password } = this.form.getRawValue();
+    this.errorMessage.set('');
+    this.isSubmitting.set(true);
     try {
-      const response = await fetch(`${environment.apiUrl}/api/create_account`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, full_name, email, password }),
-      });
-      if (!response.ok) {
-        throw new Error('Falha ao criar conta');
-      }
+      await this.auth.register({ username, full_name, email, password });
+      await this.router.navigateByUrl(this.getReturnUrl());
     } catch (error) {
-      console.error(error);
+      this.errorMessage.set(
+        error instanceof Error ? error.message : 'Não foi possível criar a conta.',
+      );
+    } finally {
+      this.isSubmitting.set(false);
     }
+  }
+
+  private getReturnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    return returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
   }
 }

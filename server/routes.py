@@ -20,6 +20,8 @@ ACCESS_TOKEN_MINUTES = 15
 class Token(SQLModel):
     access_token: str
     token_type: str = "bearer"
+    username: str
+    full_name: str | None = None
 
 
 def create_access_token(user_id: int) -> str:
@@ -93,4 +95,6 @@ def user_login(
     return {
         "access_token": create_access_token(user.id),
         "token_type": "bearer",
+        "username": user.username,
+        "full_name": user.full_name,
     }

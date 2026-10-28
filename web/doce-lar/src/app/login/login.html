@@ -19,7 +19,13 @@
       }
     </label>
 
-    <button type="submit">Entrar</button>
+    @if (errorMessage()) {
+      <p class="erro" role="alert">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Entrando...' : 'Entrar' }}
+    </button>
   </form>
 
   <p class="alt">Não tem conta? <a routerLink="/cadastro">Criar conta</a></p>

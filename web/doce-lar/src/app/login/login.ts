@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { environment } from '../../environments/environment';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
@@ -11,33 +11,40 @@ import { environment } from '../../environments/environment';
 })
 export class Login {
   private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  protected readonly errorMessage = signal('');
+  protected readonly isSubmitting = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
 
-  protected login() {
+    protected async login(): Promise<void> {
       if (this.form.invalid) {
         this.form.markAllAsTouched();
         return;
       }
-      void this.enviarLogin();
-    }
-  
-    private async enviarLogin() {
-      const { email, password } = this.form.value;
+
+      this.errorMessage.set('');
+      this.isSubmitting.set(true);
       try {
-        const response = await fetch(`${environment.apiUrl}/api/user_login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        if (!response.ok) {
-          throw new Error('Falha ao fazer login');
-        }
+        const { email, password } = this.form.getRawValue();
+        await this.auth.login(email, password);
+        await this.router.navigateByUrl(this.getReturnUrl());
       } catch (error) {
-        console.error(error);
+        this.errorMessage.set(
+          error instanceof Error ? error.message : 'Não foi possível fazer login.',
+        );
+      } finally {
+        this.isSubmitting.set(false);
       }
+    }
+
+    private getReturnUrl(): string {
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      return returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
     }
   }

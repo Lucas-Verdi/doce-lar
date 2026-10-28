@@ -5,6 +5,7 @@ import { Welcome } from './welcome';
 describe('Welcome', () => {
   beforeEach(() => {
     localStorage.removeItem('doce-lar-carrinho');
+    localStorage.removeItem('doce-lar-sessao');
   });
 
   it('should render title', async () => {
@@ -41,5 +42,21 @@ describe('Welcome', () => {
 
     expect(root.querySelector('.badge-carrinho')?.textContent).toContain('3');
     expect(localStorage.getItem('doce-lar-carrinho')).toContain('"quantidade":3');
+
+    (root.querySelector('.btn-carrinho') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelector('.btn-pagamento') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(root.querySelector('.painel-carrinho')).toBeNull();
+    expect(root.querySelector('.checkout-overlay')).not.toBeNull();
+    expect(root.querySelector('.checkout-card')?.textContent).toContain(
+      'Entre ou crie sua conta',
+    );
+
+    (root.querySelector('.checkout-botao-principal') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('.checkout-card form')).not.toBeNull();
+    expect(root.querySelector('.checkout-card')?.textContent).toContain('Entrar para continuar');
   });
 });

@@ -1,1 +1,162 @@
 /* You can add global styles to this file, and also import other style files */
+.usuario-logado {
+  font-weight: 600;
+}
+
+.checkout-aviso {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #fff0f5;
+}
+
+.btn-pagamento {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: #e8588d;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-pagamento:hover {
+  background: #d94379;
+}
+
+.checkout-overlay {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(45, 28, 34, 0.55);
+}
+
+.checkout-card {
+  position: relative;
+  width: min(100%, 30rem);
+  max-height: min(90vh, 48rem);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 2rem;
+  border-radius: 1.2rem;
+  background: #fff;
+  box-shadow: 0 16px 48px rgba(45, 28, 34, 0.25);
+  color: #5a3a31;
+}
+
+.checkout-card h2 {
+  margin: 0 2.5rem 1rem 0;
+}
+
+.checkout-card form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.checkout-card label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.checkout-card input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e6c6d1;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+
+.checkout-card input:focus {
+  outline: 2px solid #e8588d;
+  outline-offset: 1px;
+}
+
+.checkout-card input.ng-touched.ng-invalid {
+  border-color: #c0264f;
+}
+
+.checkout-fechar {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: auto;
+  padding: 0.2rem 0.65rem;
+  border: 0;
+  background: transparent;
+  color: #5a3a31;
+  font-size: 1.7rem;
+}
+
+.checkout-acoes {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.checkout-botao {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #e8588d;
+  border-radius: 999px;
+  background: #fff;
+  color: #e8588d;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkout-botao-principal {
+  background: #e8588d;
+  color: #fff;
+}
+
+.checkout-botao:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.checkout-voltar {
+  width: 100%;
+  margin-top: 0.7rem;
+  border: 0;
+  background: transparent;
+  color: #9c3e60;
+  font: inherit;
+  cursor: pointer;
+}
+
+.checkout-campo-erro,
+.checkout-erro {
+  color: #c0264f;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.checkout-acoes {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.checkout-link {
+  display: block;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #e8588d;
+  border-radius: 999px;
+  color: #e8588d;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.checkout-link-principal {
+  background: #e8588d;
+  color: #fff;
+}
