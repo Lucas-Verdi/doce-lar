@@ -3,6 +3,7 @@ from routes import router as users_router
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy import inspect
 from sqlmodel import SQLModel
 
 import database.models.models  # noqa: F401  registra as models no metadata
@@ -13,6 +14,16 @@ from database.connection import engine
 async def lifespan(app: FastAPI):
     if engine is not None:
         SQLModel.metadata.create_all(engine)
+        with engine.begin() as connection:
+            columns = {column["name"] for column in inspect(connection).get_columns("user")}
+            migrations = {
+                "reset_token_hash": "VARCHAR(128)",
+                "reset_token_expires_at": "DATETIME",
+                "reset_token_used": "BOOLEAN NOT NULL DEFAULT FALSE",
+            }
+            for name, definition in migrations.items():
+                if name not in columns:
+                    connection.execute(text(f"ALTER TABLE `user` ADD COLUMN {name} {definition}"))
     yield
 
 

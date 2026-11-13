@@ -1,0 +1,3 @@
+ALTER TABLE `user` ADD COLUMN reset_token_hash VARCHAR(128) NULL;
+ALTER TABLE `user` ADD COLUMN reset_token_expires_at DATETIME NULL;
+ALTER TABLE `user` ADD COLUMN reset_token_used BOOLEAN NOT NULL DEFAULT FALSE;

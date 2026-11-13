@@ -1,0 +1,25 @@
+<div class="caixa">
+  <a class="voltar" routerLink="/login">← Voltar para o login</a>
+  <h1>Recuperar senha</h1>
+  <p>Informe seu e-mail. Se ele estiver cadastrado, enviaremos as instruções.</p>
+  <form [formGroup]="form" (ngSubmit)="request()" novalidate>
+    <label>
+      E-mail
+      <input type="email" formControlName="email" autocomplete="email" />
+    </label>
+    @if (errorMessage()) {
+      <p class="erro" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (message()) {
+      <p class="sucesso" role="status">{{ message() }}</p>
+    }
+    @if (resetUrl()) {
+      <p class="sucesso">
+        <a [href]="resetUrl()">Abrir página para criar uma nova senha</a>
+      </p>
+    }
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Enviando...' : 'Enviar instruções' }}
+    </button>
+  </form>
+</div>

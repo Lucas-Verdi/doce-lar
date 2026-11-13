@@ -1,0 +1,23 @@
+<div class="caixa">
+  <a class="voltar" routerLink="/login">← Voltar para o login</a>
+  <h1>Nova senha</h1>
+  <form [formGroup]="form" (ngSubmit)="reset()" novalidate>
+    <label>
+      Nova senha
+      <input type="password" formControlName="password" autocomplete="new-password" />
+    </label>
+    <label>
+      Confirmar senha
+      <input type="password" formControlName="confirmation" autocomplete="new-password" />
+    </label>
+    @if (errorMessage()) {
+      <p class="erro" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (successMessage()) {
+      <p class="sucesso" role="status">{{ successMessage() }}</p>
+    }
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Salvando...' : 'Redefinir senha' }}
+    </button>
+  </form>
+</div>

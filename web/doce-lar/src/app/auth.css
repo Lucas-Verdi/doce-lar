@@ -60,6 +60,13 @@ input:focus {
   font-weight: 400;
 }
 
+.sucesso {
+  display: block;
+  margin-top: 0.25rem;
+  color: #287a45;
+  font-size: 0.85rem;
+}
+
 button {
   width: 100%;
   padding: 0.8rem;

@@ -391,6 +391,15 @@ p {
   color: #fff;
 }
 
+.rodape h2 {
+  margin-bottom: 0.75rem;
+}
+
+.contato-aviso {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
 .rodape p {
   margin: 0;
 }

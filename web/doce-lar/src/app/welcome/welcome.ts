@@ -48,6 +48,7 @@ const presentationByName: Record<string, Pick<Cupcake, 'emoji' | 'cor'>> = {
   'Limão Siciliano': { emoji: '🍋', cor: '#fff3b8' },
   'Red Velvet': { emoji: '❤️', cor: '#ffc9c9' },
 };
+const MAX_ITEM_QUANTITY = 9999;
 
 @Component({
   selector: 'app-welcome',
@@ -112,7 +113,7 @@ export class Welcome {
   protected alterarQuantidadeSelecionada(id: string, incremento: number): void {
     this.quantidadeSelecionada.update((selecionadas) => ({
       ...selecionadas,
-      [id]: Math.min(99, Math.max(1, this.obterQuantidade(id) + incremento)),
+      [id]: Math.min(MAX_ITEM_QUANTITY, Math.max(1, this.obterQuantidade(id) + incremento)),
     }));
   }
 
@@ -183,6 +184,7 @@ export class Welcome {
       this.pagamentoConfirmado.set(true);
       await this.carregarHistorico();
     } catch (error) {
+      console.error('Não foi possível concluir o pagamento.', error);
       this.checkoutErro.set(
         error instanceof Error ? error.message : 'Não foi possível gerar o pedido.',
       );

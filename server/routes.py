@@ -2,10 +2,15 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from pwdlib import PasswordHash
 from sqlmodel import Session, SQLModel, select, Field
 import os
+import hashlib
+import logging
+import secrets
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timedelta, timezone
 import jwt
 from typing import Annotated
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import EmailStr
 
 from database.connection import get_session
 from database.models.models import Order, OrderProduct, Payment, Product, User, UserCart
@@ -13,6 +18,8 @@ from database.models.models import Order, OrderProduct, Payment, Product, User, 
 router = APIRouter(prefix="/api", tags=["api"])
 password_hash = PasswordHash.recommended()
 bearer = HTTPBearer()
+logger = logging.getLogger(__name__)
+MAX_ITEM_QUANTITY = 9999
 
 def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends (bearer)],
@@ -63,7 +70,7 @@ def create_access_token(user_id: int) -> str:
 
 class OrderItemInput(SQLModel):
     product_id: int = Field(gt=0)
-    quantity: int = Field(gt=0, le=99)
+    quantity: int = Field(gt=0, le=MAX_ITEM_QUANTITY)
 
 class OrderCreate(SQLModel):
     items: list[OrderItemInput] = Field(min_length=1)
@@ -90,10 +97,16 @@ class OrderHistoryPublic(SQLModel):
 
 
 class UserCreate(SQLModel):
-    username: str
-    email: str
-    full_name: str | None = None
-    password: str
+    username: str = Field(min_length=2, max_length=80)
+    email: EmailStr
+    full_name: str | None = Field(default=None, min_length=2, max_length=120)
+    password: str = Field(min_length=6, max_length=128)
+
+
+class UserUpdate(SQLModel):
+    username: str = Field(min_length=2, max_length=80)
+    email: EmailStr
+    full_name: str | None = Field(default=None, min_length=2, max_length=120)
 
 
 class UserPublic(SQLModel):
@@ -103,8 +116,17 @@ class UserPublic(SQLModel):
     full_name: str | None
 
 class UserLogin(SQLModel):
-    email: str
+    email: EmailStr
     password: str
+
+
+class PasswordResetRequest(SQLModel):
+    email: EmailStr
+
+
+class PasswordReset(SQLModel):
+    token: str = Field(min_length=32, max_length=256)
+    password: str = Field(min_length=6, max_length=128)
 
 class ProductPublic(SQLModel):
     id: int
@@ -124,6 +146,11 @@ def create_account(
     body: UserCreate,
     session: Session = Depends(get_session),
 ):
+    if session.exec(select(User).where(User.email == body.email)).first() is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado.")
+    if session.exec(select(User).where(User.username == body.username)).first() is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Nome de usuário já cadastrado.")
+
     user = User(
         username=body.username,
         email=body.email,
@@ -136,6 +163,99 @@ def create_account(
     session.refresh(user)
 
     return user
+
+
+@router.get("/me", response_model=UserPublic)
+def get_profile(current_user: User = Depends(get_current_user)) -> User:
+    return current_user
+
+
+@router.put("/me", response_model=UserPublic)
+def update_profile(
+    body: UserUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> User:
+    email_owner = session.exec(
+        select(User).where(User.email == body.email, User.id != current_user.id)
+    ).first()
+    if email_owner is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado.")
+
+    username_owner = session.exec(
+        select(User).where(User.username == body.username, User.id != current_user.id)
+    ).first()
+    if username_owner is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Nome de usuário já cadastrado.",
+        )
+
+    current_user.username = body.username
+    current_user.email = body.email
+    current_user.full_name = body.full_name
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+class PasswordRecoveryResponse(SQLModel):
+    message: str
+    reset_url: str | None = None
+
+
+@router.post("/password-recovery")
+def request_password_recovery(
+    body: PasswordResetRequest,
+    session: Session = Depends(get_session),
+) -> PasswordRecoveryResponse:
+    user = session.exec(select(User).where(User.email == body.email)).first()
+    if user is None:
+        return PasswordRecoveryResponse(
+            message="Se o e-mail estiver cadastrado, um link de recuperação será exibido.",
+        )
+
+    token = secrets.token_urlsafe(48)
+    user.reset_token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    user.reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    user.reset_token_used = False
+    session.add(user)
+    session.commit()
+
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")
+    return PasswordRecoveryResponse(
+        message="Link de recuperação gerado. Ele expira em 1 hora e só pode ser usado uma vez.",
+        reset_url=f"{frontend_url}/redefinir-senha?token={token}",
+    )
+
+
+@router.post("/password-reset")
+def reset_password(
+    body: PasswordReset,
+    session: Session = Depends(get_session),
+) -> dict[str, str]:
+    token_hash = hashlib.sha256(body.token.encode("utf-8")).hexdigest()
+    user = session.exec(select(User).where(User.reset_token_hash == token_hash)).first()
+    now = datetime.now(timezone.utc)
+    expiry = user.reset_token_expires_at if user is not None else None
+    if expiry is not None and expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    if (
+        user is None
+        or user.reset_token_used
+        or expiry is None
+        or expiry < now
+    ):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido ou expirado.")
+
+    user.hashed_password = password_hash.hash(body.password)
+    user.reset_token_used = True
+    user.reset_token_hash = None
+    user.reset_token_expires_at = None
+    session.add(user)
+    session.commit()
+    return {"message": "Senha redefinida com sucesso."}
 
 #Rota de login
 @router.post("/user_login", response_model=Token)
@@ -217,9 +337,15 @@ def create_order(
             )
 
     total = sum(
-        products[item.product_id].price * item.quantity
-        for item in body.items
-    )
+        (Decimal(str(products[item.product_id].price)) * item.quantity
+        for item in body.items),
+        Decimal("0"),
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if total <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="O valor do pedido deve ser maior que zero.",
+        )
 
     # Substitui o conteúdo anterior do carrinho pelo enviado agora.
     carrinho_anterior = session.exec(
@@ -231,7 +357,7 @@ def create_order(
 
     order = Order(
         user_id=current_user.id,
-        total_amount=total,
+        total_amount=float(total),
         status="pending",
     )
     session.add(order)
@@ -254,12 +380,23 @@ def create_order(
     session.add(
         Payment(
             order_id=order.id,
-            amount=total,
+            amount=float(total),
             status="paid",
             payment_method=body.payment_method,
         )
     )
-    session.commit()
+    try:
+        session.commit()
+    except Exception:
+        session.rollback()
+        logger.exception(
+            "Could not persist order payment",
+            extra={"user_id": current_user.id, "payment_method": body.payment_method},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível concluir o pagamento. Tente novamente.",
+        )
     session.refresh(order)
 
     return OrderPublic(

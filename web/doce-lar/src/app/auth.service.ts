@@ -16,7 +16,9 @@ interface LoginResponse {
 }
 
 interface PublicUser {
+  id?: number;
   username: string;
+  email?: string;
   full_name: string | null;
 }
 
@@ -37,7 +39,6 @@ export class AuthService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
     if (!response.ok) {
       throw new Error(await this.getErrorMessage(response, 'Não foi possível fazer login.'));
     }
@@ -67,7 +68,6 @@ export class AuthService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(account),
     });
-
     if (!response.ok) {
       throw new Error(await this.getErrorMessage(response, 'Não foi possível criar a conta.'));
     }
@@ -76,24 +76,73 @@ export class AuthService {
     if (!isPublicUser(user)) {
       throw new Error('A resposta do servidor não contém os dados da conta.');
     }
-
     this.saveKnownUser(account.email, user);
     await this.login(account.email, account.password);
+    const currentSession = this.sessionState();
+    if (currentSession) {
+      this.saveSession({ ...currentSession, username: user.username, fullName: user.full_name });
+    }
+  }
 
+  async updateProfile(profile: {
+    username: string;
+    email: string;
+    full_name: string;
+  }): Promise<void> {
+    const response = await fetch(`${environment.apiUrl}/api/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.sessionState()?.accessToken ?? ''}`,
+      },
+      body: JSON.stringify(profile),
+    });
+    if (!response.ok) {
+      throw new Error(await this.getErrorMessage(response, 'Não foi possível atualizar o perfil.'));
+    }
+    const user: unknown = await response.json();
+    if (!isPublicUser(user) || typeof user.email !== 'string') {
+      throw new Error('A resposta do servidor contém dados de perfil inválidos.');
+    }
     const currentSession = this.sessionState();
     if (currentSession) {
       this.saveSession({
         ...currentSession,
+        email: user.email,
         username: user.username,
         fullName: user.full_name,
       });
     }
   }
 
+  async requestPasswordRecovery(email: string): Promise<{ message: string; reset_url?: string }> {
+    const response = await fetch(`${environment.apiUrl}/api/password-recovery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      throw new Error(await this.getErrorMessage(response, 'Não foi possível solicitar a recuperação.'));
+    }
+    const result: unknown = await response.json();
+    if (!isRecoveryResponse(result)) throw new Error('A resposta do servidor é inválida.');
+    return result;
+  }
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    const response = await fetch(`${environment.apiUrl}/api/password-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    if (!response.ok) {
+      throw new Error(await this.getErrorMessage(response, 'Não foi possível redefinir a senha.'));
+    }
+  }
+
   logout(): void {
     this.sessionState.set(null);
     if (!this.isBrowser) return;
-
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch (error) {
@@ -104,7 +153,6 @@ export class AuthService {
   private saveSession(session: AuthSession): void {
     this.sessionState.set(session);
     if (!this.isBrowser) return;
-
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch (error) {
@@ -114,13 +162,10 @@ export class AuthService {
 
   private loadSession(): AuthSession | null {
     if (!this.isBrowser) return null;
-
     try {
       const savedSession: unknown = JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null');
       if (isAuthSession(savedSession)) return savedSession;
-      if (savedSession !== null) {
-        console.error('A sessão salva no navegador tem um formato inválido.');
-      }
+      if (savedSession !== null) console.error('A sessão salva no navegador tem um formato inválido.');
     } catch (error) {
       console.error('Não foi possível carregar a sessão salva no navegador.', error);
     }
@@ -129,7 +174,6 @@ export class AuthService {
 
   private saveKnownUser(email: string, user: PublicUser): void {
     if (!this.isBrowser) return;
-
     try {
       const users = this.loadKnownUsers();
       users[email.toLowerCase()] = user;
@@ -140,18 +184,16 @@ export class AuthService {
   }
 
   private getKnownUser(email: string): PublicUser | null {
-    if (!this.isBrowser) return null;
-    return this.loadKnownUsers()[email.toLowerCase()] ?? null;
+    return this.isBrowser ? this.loadKnownUsers()[email.toLowerCase()] ?? null : null;
   }
 
   private loadKnownUsers(): Record<string, PublicUser> {
+    if (!this.isBrowser) return {};
     try {
       const users: unknown = JSON.parse(localStorage.getItem(USERNAMES_KEY) ?? '{}');
       if (typeof users === 'object' && users !== null && !Array.isArray(users)) {
         return Object.fromEntries(
-          Object.entries(users).filter((entry): entry is [string, PublicUser] =>
-            isPublicUser(entry[1]),
-          ),
+          Object.entries(users).filter((entry): entry is [string, PublicUser] => isPublicUser(entry[1])),
         );
       }
       console.error('Os dados de contas salvos no navegador têm um formato inválido.');
@@ -165,8 +207,7 @@ export class AuthService {
     try {
       const body: unknown = await response.json();
       if (typeof body === 'object' && body !== null && 'detail' in body) {
-        const detail = body.detail;
-        if (typeof detail === 'string') return detail;
+        return typeof body.detail === 'string' ? body.detail : fallback;
       }
     } catch (error) {
       console.error('Não foi possível ler a mensagem de erro do servidor.', error);
@@ -178,7 +219,6 @@ export class AuthService {
 function isAuthSession(value: unknown): value is AuthSession {
   if (typeof value !== 'object' || value === null) return false;
   const session = value as Record<string, unknown>;
-
   return (
     typeof session['accessToken'] === 'string' &&
     typeof session['email'] === 'string' &&
@@ -190,9 +230,9 @@ function isAuthSession(value: unknown): value is AuthSession {
 function isPublicUser(value: unknown): value is PublicUser {
   if (typeof value !== 'object' || value === null) return false;
   const user = value as Record<string, unknown>;
-
   return (
     typeof user['username'] === 'string' &&
+    (user['email'] === undefined || typeof user['email'] === 'string') &&
     (typeof user['full_name'] === 'string' || user['full_name'] === null)
   );
 }
@@ -200,12 +240,21 @@ function isPublicUser(value: unknown): value is PublicUser {
 function isLoginResponse(value: unknown): value is LoginResponse {
   if (typeof value !== 'object' || value === null) return false;
   const response = value as Record<string, unknown>;
-
   return (
     typeof response['access_token'] === 'string' &&
     (response['username'] === undefined || typeof response['username'] === 'string') &&
     (response['full_name'] === undefined ||
       typeof response['full_name'] === 'string' ||
       response['full_name'] === null)
+  );
+}
+
+function isRecoveryResponse(value: unknown): value is { message: string; reset_url?: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    typeof value.message === 'string' &&
+    (!('reset_url' in value) || typeof value.reset_url === 'string')
   );
 }

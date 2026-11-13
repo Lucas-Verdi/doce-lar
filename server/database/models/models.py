@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
@@ -16,6 +17,9 @@ class User(SQLModel, table=True):
     email: str = Field(index=True)
     full_name: str | None = Field(default=None)
     hashed_password: str
+    reset_token_hash: str | None = Field(default=None, index=True)
+    reset_token_expires_at: datetime | None = Field(default=None)
+    reset_token_used: bool = Field(default=False)
 
 class Product(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -55,5 +59,3 @@ class Shipment(SQLModel, table=True):
     order_id: int = Field(foreign_key=ORDER_FOREIGN_KEY)
     address: str
     status: str = Field(default="pending")
-
-

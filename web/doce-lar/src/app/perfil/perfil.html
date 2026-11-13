@@ -1,0 +1,27 @@
+<div class="caixa">
+  <a class="voltar" routerLink="/">← Voltar</a>
+  <h1>Meu perfil</h1>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <label>
+      Nome de usuário
+      <input type="text" formControlName="username" autocomplete="username" />
+    </label>
+    <label>
+      Nome completo
+      <input type="text" formControlName="full_name" autocomplete="name" />
+    </label>
+    <label>
+      E-mail
+      <input type="email" formControlName="email" autocomplete="email" />
+    </label>
+    @if (errorMessage()) {
+      <p class="erro" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (successMessage()) {
+      <p class="sucesso" role="status">{{ successMessage() }}</p>
+    }
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Salvando...' : 'Salvar alterações' }}
+    </button>
+  </form>
+</div>

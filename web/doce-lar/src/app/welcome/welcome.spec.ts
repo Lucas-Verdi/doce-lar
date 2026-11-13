@@ -1,6 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { Welcome } from './welcome';
+import { environment } from '../../environments/environment';
+
+const products = [
+  { id: 1, name: 'Morango Cremoso', description: 'Morangos', price: 40, in_stock: true, quantity: 10 },
+  { id: 2, name: 'Brigadeiro', description: 'Chocolate', price: 40, in_stock: true, quantity: 10 },
+];
 
 describe('Welcome', () => {
   beforeEach(() => {
@@ -11,9 +19,12 @@ describe('Welcome', () => {
   it('should render title', async () => {
     await TestBed.configureTestingModule({
       imports: [Welcome],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     const fixture = TestBed.createComponent(Welcome);
+    TestBed.inject(HttpTestingController)
+      .expectOne(`${environment.apiUrl}/api/get_products`)
+      .flush(products);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Doce Lar');
@@ -22,9 +33,13 @@ describe('Welcome', () => {
   it('adds the selected product quantity to the cart', async () => {
     await TestBed.configureTestingModule({
       imports: [Welcome],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     const fixture = TestBed.createComponent(Welcome);
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController)
+      .expectOne(`${environment.apiUrl}/api/get_products`)
+      .flush(products);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
 

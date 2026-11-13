@@ -8,6 +8,7 @@
       <span class="usuario-logado">
         Olá, {{ session.username }}
       </span>
+      <button type="button" class="btn-login" routerLink="/perfil">Meu perfil</button>
       <button type="button" class="btn-login" (click)="abrirHistorico()">Histórico de pedidos</button>
       <button type="button" class="btn-login" (click)="encerrarSessao()">Sair</button>
     } @else {
@@ -69,7 +70,7 @@
                 <button
                   type="button"
                   [attr.aria-label]="'Aumentar quantidade de ' + c.nome"
-                  [disabled]="!c.disponivel || obterQuantidade(c.id) >= 99 || obterQuantidade(c.id) >= c.estoque"
+                  [disabled]="!c.disponivel || obterQuantidade(c.id) >= 9999 || obterQuantidade(c.id) >= c.estoque"
                   (click)="alterarQuantidadeSelecionada(c.id, 1)"
                 >
                   +
@@ -104,8 +105,11 @@
   </section>
 </main>
 
-<footer id="contato" class="rodape">
-  <p>🧁 Doce Lar — Feito com carinho · Encomendas pelo WhatsApp</p>
+<footer id="contato" class="rodape" aria-labelledby="contato-titulo">
+  <h2 id="contato-titulo">Contato</h2>
+  <p>🧁 Doce Lar — Feito com carinho.</p>
+  <p>Para encomendas, fale conosco pelo WhatsApp oficial da loja.</p>
+  <p class="contato-aviso">O canal de atendimento deve ser informado pela loja antes da publicação.</p>
 </footer>
 
 <section class="carrinho-flutuante" aria-label="Carrinho de compras">
@@ -296,7 +300,7 @@
       } @else {
         <h2 id="checkout-titulo">Pagamento</h2>
         <p>
-          Conta confirmada para {{ auth.session()?.username }}. Seu carrinho está pronto para
+          Compra pronta para {{ auth.session()?.username }}. Seu carrinho está pronto para
           continuar.
         </p>
         <div class="checkout-aviso" role="note">
@@ -344,7 +348,7 @@
           </button>
           @if (pagamentoConfirmado()) {
             <p class="checkout-pagamento-confirmado" role="status">
-              Pedido gerado com sucesso. Pagamento simulado confirmado.
+              Compra confirmada. Pagamento simulado confirmado.
             </p>
           } @else if (checkoutErro()) {
             <p class="checkout-erro" role="alert">{{ checkoutErro() }}</p>
