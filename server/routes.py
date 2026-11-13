@@ -223,10 +223,9 @@ def request_password_recovery(
     session.add(user)
     session.commit()
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")
     return PasswordRecoveryResponse(
         message="Link de recuperação gerado. Ele expira em 1 hora e só pode ser usado uma vez.",
-        reset_url=f"{frontend_url}/redefinir-senha?token={token}",
+        reset_url=f"/redefinir-senha?token={token}",
     )
 
 

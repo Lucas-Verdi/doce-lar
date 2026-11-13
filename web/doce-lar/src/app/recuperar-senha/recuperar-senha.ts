@@ -31,7 +31,11 @@ export class RecuperarSenha {
     try {
       const result = await this.auth.requestPasswordRecovery(this.form.getRawValue().email);
       this.message.set(result.message);
-      this.resetUrl.set(result.reset_url ?? '');
+      this.resetUrl.set(
+        result.reset_url
+          ? new URL(result.reset_url, window.location.origin).toString()
+          : '',
+      );
     } catch (error) {
       this.errorMessage.set(
         error instanceof Error ? error.message : 'Não foi possível solicitar a recuperação.',
